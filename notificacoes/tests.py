@@ -9,6 +9,9 @@ from django.shortcuts import resolve_url
 
 from atividades.models import Atividade, Disciplina
 from notificacoes.models import Notificacao
+from gamificacao.models import EventoXP, Progresso
+
+from .services import marcar_como_visualizado
 
 
 class NotificacaoTests(TestCase):
@@ -55,6 +58,10 @@ class NotificacaoTests(TestCase):
             mensagem="Uma nova atividade foi publicada",
             prioridade=Notificacao.Prioridade.NORMAL,
             visualizada=False,
+        )
+
+        self.progresso, _ = Progresso.objects.get_or_create(
+            aluno=self.aluno1,
         )
 
 
@@ -192,3 +199,96 @@ class NotificacaoTests(TestCase):
 
         self.assertFalse(self.notificacao.visualizada)
         self.assertIsNone(self.notificacao.visualizada_em)
+
+    def test_notificacao_normal_nao_concede_xp(self):
+        self.notificacao.prioridade = Notificacao.Prioridade.NORMAL
+        self.notificacao.save(update_fields=["prioridade"])
+
+        marcar_como_visualizado(self.notificacao.pk, self.aluno1)
+
+        self.notificacao.refresh_from_db()
+        self.progresso.refresh_from_db()
+
+        self.assertTrue(self.notificacao.visualizada)
+        self.assertEqual(self.progresso.xp_total, 0)
+        self.assertEqual(EventoXP.objects.count(), 0)
+
+    def test_notificacao_importante_concede_10_xp(self):
+        self.notificacao.prioridade = Notificacao.Prioridade.IMPORTANTE
+        self.notificacao.save(update_fields=["prioridade"])
+
+        marcar_como_visualizado(self.notificacao.pk, self.aluno1)
+
+        self.notificacao.refresh_from_db()
+        self.progresso.refresh_from_db()
+
+        self.assertTrue(self.notificacao.visualizada)
+        self.assertEqual(self.progresso.xp_total, 10)
+        self.assertEqual(EventoXP.objects.count(), 1)
+
+        evento = EventoXP.objects.get()
+        self.assertEqual(evento.progresso_id, self.progresso.pk)
+        self.assertEqual(
+            evento.codigo,
+            EventoXP.Codigo.NOTIFICACAO_IMPORTANTE_VISUALIZADA,
+        )
+        self.assertEqual(evento.referencia_id, self.notificacao.pk)
+        self.assertEqual(evento.quantidade, 10)
+
+    def test_notificacao_urgente_concede_10_xp(self):
+        self.notificacao.prioridade = Notificacao.Prioridade.URGENTE
+        self.notificacao.save(update_fields=["prioridade"])
+
+        marcar_como_visualizado(self.notificacao.pk, self.aluno1)
+
+        self.notificacao.refresh_from_db()
+        self.progresso.refresh_from_db()
+
+        self.assertTrue(self.notificacao.visualizada)
+        self.assertEqual(self.progresso.xp_total, 10)
+        self.assertEqual(EventoXP.objects.count(), 1)
+
+        evento = EventoXP.objects.get()
+        self.assertEqual(evento.progresso_id, self.progresso.pk)
+        self.assertEqual(
+            evento.codigo,
+            EventoXP.Codigo.NOTIFICACAO_IMPORTANTE_VISUALIZADA,
+        )
+        self.assertEqual(evento.referencia_id, self.notificacao.pk)
+        self.assertEqual(evento.quantidade, 10)
+
+    def test_visualizar_duas_vezes_nao_duplica_xp(self):
+        self.notificacao.prioridade = Notificacao.Prioridade.IMPORTANTE
+        self.notificacao.save(update_fields=["prioridade"])
+
+        marcar_como_visualizado(self.notificacao.pk, self.aluno1)
+        marcar_como_visualizado(self.notificacao.pk, self.aluno1)
+
+        self.progresso.refresh_from_db()
+
+        self.assertEqual(self.progresso.xp_total, 10)
+        self.assertEqual(EventoXP.objects.count(), 1)
+
+    def test_notificacao_de_outro_aluno_nao_concede_xp(self):
+        self.notificacao.prioridade = Notificacao.Prioridade.IMPORTANTE
+        self.notificacao.save(update_fields=["prioridade"])
+
+        progresso_aluno2, _ = Progresso.objects.get_or_create(
+            aluno=self.aluno2,
+        )
+
+        with self.assertRaises(Notificacao.DoesNotExist):
+            marcar_como_visualizado(
+                self.notificacao.pk,
+                self.aluno2,
+            )
+
+        self.notificacao.refresh_from_db()
+        self.progresso.refresh_from_db()
+        progresso_aluno2.refresh_from_db()
+
+        self.assertFalse(self.notificacao.visualizada)
+        self.assertIsNone(self.notificacao.visualizada_em)
+        self.assertEqual(self.progresso.xp_total, 0)
+        self.assertEqual(progresso_aluno2.xp_total, 0)
+        self.assertEqual(EventoXP.objects.count(), 0)

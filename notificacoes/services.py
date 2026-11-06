@@ -1,6 +1,10 @@
 from django.utils import timezone
+from django.db import transaction
 
 from .models import Notificacao
+
+from gamificacao.models import EventoXP
+from gamificacao.services import conceder_xp
 
 
 def calcular_prioridade(atividade):
@@ -44,14 +48,26 @@ def criar_notificacoes_da_atividade(atividade):
 
 
 def marcar_como_visualizado(notificacao_id, usuario):
-    notificacao = Notificacao.objects.get(
-        id=notificacao_id,
-        destinatario=usuario,
-    )
-
-    if not notificacao.visualizada:
-        notificacao.visualizada = True
-        notificacao.visualizada_em = timezone.now()
-        notificacao.save(
-            update_fields=["visualizada", "visualizada_em"],
+    with transaction.atomic():
+        notificacao = Notificacao.objects.select_for_update().get(
+            id=notificacao_id,
+            destinatario=usuario,
         )
+
+        if not notificacao.visualizada:
+            notificacao.visualizada = True
+            notificacao.visualizada_em = timezone.now()
+            notificacao.save(
+                update_fields=["visualizada", "visualizada_em"],
+            )
+
+            if notificacao.prioridade in (
+                Notificacao.Prioridade.IMPORTANTE,
+                Notificacao.Prioridade.URGENTE,
+            ):
+                conceder_xp(
+                    aluno=usuario,
+                    codigo=EventoXP.Codigo.NOTIFICACAO_IMPORTANTE_VISUALIZADA,
+                    referencia_id=notificacao.pk,
+                    quantidade=10,
+                )
