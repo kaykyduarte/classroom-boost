@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     "usuarios",
     "notificacoes",
     "atividades",
-    "chat"
+    "chat",
+    "gamificacao",
 ]
 
 MIDDLEWARE = [
