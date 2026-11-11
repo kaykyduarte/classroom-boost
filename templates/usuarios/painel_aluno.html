@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Painel do aluno | Classroom Boost{% endblock %}
+
+{% block content %}
+<div class="student-dashboard">
+  <section class="welcome-panel student-welcome">
+    <div class="welcome-copy">
+      <span class="eyebrow">SEU ESPAÇO DE APRENDIZAGEM</span>
+      <h1>Olá, {{ user.first_name|default:user.username }}!</h1>
+      <p>Acompanhe suas turmas, os prazos das atividades e suas conquistas.</p>
+    </div>
+    <div class="welcome-actions">
+      <a class="button button-outline" href="{% url 'gamificacao:ranking' %}">★ Ver ranking de XP</a>
+    </div>
+    <div class="welcome-decoration" aria-hidden="true"><span>★</span></div>
+  </section>
+
+  <section class="metric-grid student-metric-grid" aria-label="Resumo do aluno">
+    <article class="metric-card"><span class="metric-icon metric-blue">▦</span><div><span class="metric-label">Minhas turmas</span><strong>{{ disciplinas_total }}</strong></div><small>disciplinas matriculadas</small></article>
+    <article class="metric-card"><span class="metric-icon metric-green">▤</span><div><span class="metric-label">Atividades</span><strong>{{ atividades_total }}</strong></div><small>publicadas nas suas turmas</small></article>
+    <article class="metric-card"><span class="metric-icon metric-orange">◷</span><div><span class="metric-label">Notificações não lidas</span><strong>{{ nao_visualizadas }}</strong></div><small>avisos para acompanhar</small></article>
+    <article class="metric-card"><span class="metric-icon metric-yellow">★</span><div><span class="metric-label">Meu XP</span><strong>{{ pontos }}</strong></div><small>experiência acumulada</small></article>
+  </section>
+
+  {% include "usuarios/_resumo_turmas.html" %}
+  {% include "usuarios/_resumo_atualizacoes.html" %}
+</div>
+{% endblock %}

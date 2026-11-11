@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Ranking de XP | Classroom Boost{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">GAMIFICAÇÃO</span>
+    <h1>Ranking de aprendizagem</h1>
+    <p class="muted">Reconhecendo participação e dedicação.</p>
+  </div>
+  {% if user.tipo == 'ALUNO' %}
+    <div class="points-highlight"><small>Seu XP</small><strong>★ {{ meus_pontos }} XP</strong></div>
+  {% endif %}
+</div>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h2>Ranking geral</h2>
+      <p>Até 20 alunos ativos com maior XP acumulado. Empates são ordenados por nome e usuário.</p>
+    </div>
+  </div>
+  {% for aluno in alunos %}
+    <div class="ranking-row {% if aluno.pk == user.pk %}is-current{% endif %}" {% if aluno.pk == user.pk %}aria-current="true"{% endif %}>
+      <span class="rank-number">{{ forloop.counter }}</span>
+      <span class="rank-avatar">{{ aluno.first_name|default:aluno.username|first|upper }}</span>
+      <span class="list-main">
+        <b>{{ aluno.get_full_name|default:aluno.username }}</b>
+        <small>{% if aluno.pk == user.pk %}Você{% else %}Aluno{% endif %}</small>
+      </span>
+      <strong class="rank-points">{{ aluno.total_pontos }} XP</strong>
+    </div>
+  {% empty %}
+    <div class="empty-state">Nenhum aluno ativo cadastrado ainda.</div>
+  {% endfor %}
+</section>
+{% endblock %}

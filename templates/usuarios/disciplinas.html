@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Disciplinas | Classroom Boost{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">SUAS TURMAS</span>
+    <h1>Disciplinas</h1>
+    <p class="page-subtitle">{% if user.tipo == 'ALUNO' %}Consulte as disciplinas em que você está matriculado.{% else %}Consulte suas turmas, alunos e atividades.{% endif %}</p>
+  </div>
+  <span class="count-badge">{{ disciplinas|length }} disciplina(s)</span>
+  {% if user.tipo == 'PROFESSOR' %}
+    <a class="button button-blue" href="{% url 'usuarios:criar_disciplina' %}">＋ Criar turma</a>
+  {% endif %}
+</div>
+
+{% include "usuarios/_cards_disciplinas.html" %}
+{% endblock %}

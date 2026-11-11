@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Painel do professor | Classroom Boost{% endblock %}
+
+{% block content %}
+<section class="welcome-panel teacher-welcome">
+  <div class="welcome-copy">
+    <span class="eyebrow">{% if user.tipo == 'PROFESSOR' %}ÁREA DO PROFESSOR{% else %}ÁREA DA ADMINISTRAÇÃO{% endif %}</span>
+    <h1>Olá, {{ user.first_name|default:user.username }}!</h1>
+    <p>Acompanhe suas turmas, os alunos matriculados e as atividades publicadas.</p>
+  </div>
+  {% if user.tipo == 'PROFESSOR' %}
+    <div class="welcome-actions">
+      <a class="button button-blue" href="{% url 'usuarios:criar_disciplina' %}">＋ Criar turma</a>
+      <a class="button button-outline" href="{% url 'atividades:criar' %}">＋ Criar atividade</a>
+    </div>
+  {% endif %}
+  <div class="welcome-decoration" aria-hidden="true"><span>CB</span></div>
+</section>
+
+<section class="metric-grid" aria-label="Resumo das suas turmas">
+  <article class="metric-card"><span class="metric-icon metric-blue">▦</span><div><span class="metric-label">Turmas</span><strong>{{ disciplinas_total }}</strong></div><small>suas disciplinas</small></article>
+  <article class="metric-card"><span class="metric-icon metric-green">▤</span><div><span class="metric-label">Atividades</span><strong>{{ atividades_total }}</strong></div><small>publicadas nas suas turmas</small></article>
+  <article class="metric-card"><span class="metric-icon metric-orange">◷</span><div><span class="metric-label">Alunos</span><strong>{{ alunos_total }}</strong></div><small>alunos distintos matriculados</small></article>
+</section>
+
+{% include "usuarios/_resumo_turmas.html" %}
+{% include "usuarios/_resumo_atualizacoes.html" %}
+{% endblock %}

@@ -1,0 +1,40 @@
+<div class="dashboard-columns">
+  <section class="content-section content-card">
+    <div class="section-heading">
+      <div><h2>Atividades recentes</h2><p>Últimas publicações nas suas turmas.</p></div>
+      <a class="section-link" href="{% url 'atividades:lista' %}">Ver todas <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="activity-list">
+      {% for atividade in atividades %}
+        <a class="activity-item" href="{% url 'atividades:detalhe' atividade.pk %}">
+          <span class="activity-file-icon" aria-hidden="true">▤</span>
+          <span class="activity-item-copy"><b>{{ atividade.titulo }}</b><small>{{ atividade.disciplina.nome }}</small></span>
+          <span class="activity-date"><small>Prazo</small><b>{{ atividade.prazo|date:"d/m/Y · H:i" }}</b></span>
+        </a>
+      {% empty %}
+        <div class="empty-inline">Nenhuma atividade publicada nas suas turmas.</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="content-section content-card">
+    <div class="section-heading">
+      <div><h2>Notificações</h2><p>Avisos destinados a você.</p></div>
+      <a class="section-link" href="{% url 'notificacoes:lista' %}">Ver todas <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="notification-list">
+      {% for notificacao in notificacoes %}
+        <div class="notification-item">
+          <span class="notification-mark {% if notificacao.visualizada %}seen{% endif %}" aria-hidden="true"></span>
+          <div class="notification-copy">
+            <a href="{% url 'notificacoes:lista' %}#notificacao-{{ notificacao.pk }}"><b>{{ notificacao.titulo }}</b></a>
+            <p>{{ notificacao.mensagem }}</p>
+            <small>{{ notificacao.get_prioridade_display }} · {{ notificacao.criada_em|date:"d/m · H:i" }} · {% if notificacao.visualizada %}Visualizada{% else %}Não lida{% endif %}</small>
+          </div>
+        </div>
+      {% empty %}
+        <div class="empty-inline">Nenhuma notificação por enquanto.</div>
+      {% endfor %}
+    </div>
+  </section>
+</div>

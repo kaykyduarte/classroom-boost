@@ -1,0 +1,103 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>{% block title %}Classroom Boost{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'js/app.js' %}" defer></script>
+</head>
+<body class="{% if user.is_authenticated %}authenticated-layout{% else %}public-layout{% endif %}">
+{% if user.is_authenticated %}
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+    <div class="sidebar-brand">
+      <span class="brand-mark">CB</span>
+      <span class="brand-name">Classroom <b>Boost</b></span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'painel' %}active{% endif %}" href="{% url 'usuarios:painel' %}">
+        <span class="nav-icon" aria-hidden="true">⌂</span><span>Meu painel</span>
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'disciplinas' or request.resolver_match.url_name == 'detalhe_disciplina' or request.resolver_match.url_name == 'criar_disciplina' or request.resolver_match.url_name == 'editar_disciplina' %}active{% endif %}" href="{% url 'usuarios:disciplinas' %}">
+        <span class="nav-icon" aria-hidden="true">▦</span><span>Disciplinas</span>
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.app_name == 'atividades' %}active{% endif %}" href="{% url 'atividades:lista' %}">
+        <span class="nav-icon" aria-hidden="true">▤</span><span>Atividades</span>
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.app_name == 'notificacoes' %}active{% endif %}" href="{% url 'notificacoes:lista' %}">
+        <span class="nav-icon" aria-hidden="true">♧</span><span>Notificações</span>
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.app_name == 'chat' %}active{% endif %}" href="{% url 'chat:caixa_entrada' %}">
+        <span class="nav-icon" aria-hidden="true">✉</span><span>Mensagens</span>
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.app_name == 'gamificacao' %}active{% endif %}" href="{% url 'gamificacao:ranking' %}">
+        <span class="nav-icon" aria-hidden="true">★</span><span>Ranking</span>
+      </a>
+      {% if user.is_staff %}
+        <div class="sidebar-divider"></div>
+        <a class="sidebar-link" href="{% url 'admin:index' %}">
+          <span class="nav-icon" aria-hidden="true">⚙</span><span>Administração</span>
+        </a>
+      {% endif %}
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user-avatar">{{ user.first_name|default:user.username|first|upper }}</div>
+      <div class="sidebar-user-copy">
+        <b>{{ user.first_name|default:user.username }}</b>
+        <span>{% if user.tipo == 'ALUNO' %}Aluno{% elif user.tipo == 'PROFESSOR' %}Professor{% else %}Administração{% endif %}</span>
+      </div>
+      <form method="post" action="{% url 'usuarios:logout' %}" class="sidebar-logout">
+        {% csrf_token %}
+        <button type="submit" title="Sair" aria-label="Sair">↪</button>
+      </form>
+    </div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-button menu-toggle" type="button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="true">☰</button>
+        <a class="topbar-title" href="{% url 'usuarios:painel' %}">Classroom Boost</a>
+      </div>
+      <div class="topbar-actions">
+        <span class="topbar-avatar" title="{{ user.get_full_name|default:user.username }}">{{ user.first_name|default:user.username|first|upper }}</span>
+      </div>
+    </header>
+{% else %}
+  <header class="public-topbar">
+    <a class="brand" href="{% url 'usuarios:inicio' %}">
+      <span class="brand-mark">CB</span>
+      <span>Classroom <b>Boost</b></span>
+    </a>
+    <nav class="public-nav" aria-label="Navegação principal">
+      <a href="{% url 'usuarios:inicio' %}">Início</a>
+      <a href="{% url 'usuarios:inicio' %}#recursos">Recursos</a>
+      <a class="topbar-create" href="{% url 'usuarios:login' %}">Entrar</a>
+      <a href="{% url 'usuarios:cadastro' %}">Criar conta</a>
+    </nav>
+  </header>
+{% endif %}
+
+  <main class="page-shell">
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    Classroom Boost <span>•</span> Aprender, acompanhar e evoluir.
+  </footer>
+{% if user.is_authenticated %}
+  </div>
+</div>
+{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

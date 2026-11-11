@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Entrar | Classroom Boost{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <section class="auth-card">
+    <span class="eyebrow">BEM-VINDO DE VOLTA</span>
+    <h1>Entre na sua conta</h1>
+    <p class="muted">Acesse sua conta no Classroom Boost.</p>
+    <form method="post" action="{% url 'usuarios:login' %}" class="stack-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="form-errors" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="field">
+        <label for="{{ form.username.id_for_label }}">Usuário</label>
+        {{ form.username }}
+        {{ form.username.errors }}
+      </div>
+      <div class="field">
+        <label for="{{ form.password.id_for_label }}">Senha</label>
+        {{ form.password }}
+        {{ form.password.errors }}
+      </div>
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="button primary full" type="submit">Entrar</button>
+    </form>
+    <p class="auth-foot">Ainda não tem conta? <a href="{% url 'usuarios:cadastro' %}">Cadastre-se como aluno</a></p>
+  </section>
+</div>
+{% endblock %}

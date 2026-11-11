@@ -292,3 +292,177 @@ class NotificacaoTests(TestCase):
         self.assertEqual(self.progresso.xp_total, 0)
         self.assertEqual(progresso_aluno2.xp_total, 0)
         self.assertEqual(EventoXP.objects.count(), 0)
+
+
+class ListaNotificacoesViewTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        Usuario = get_user_model()
+        cls.professor = Usuario.objects.create_user(username="professor", tipo="PROFESSOR")
+        cls.aluno = Usuario.objects.create_user(username="aluno", tipo="ALUNO")
+        cls.aluno2 = Usuario.objects.create_user(username="aluno2", tipo="ALUNO")
+        cls.disciplina = Disciplina.objects.create(nome="Estrutura de Dados", professor=cls.professor)
+        cls.disciplina.alunos.add(cls.aluno, cls.aluno2)
+        cls.outra_disciplina = Disciplina.objects.create(nome="Outra disciplina", professor=cls.professor)
+        cls.atividade = Atividade.objects.create(
+            titulo="Trabalho de Pilhas", disciplina=cls.disciplina,
+            prazo=timezone.now() + timedelta(hours=12),
+        )
+        atividade_lida = Atividade.objects.create(
+            titulo="Trabalho de Filas", disciplina=cls.disciplina,
+            prazo=timezone.now() + timedelta(days=3),
+        )
+        atividade_oculta = Atividade.objects.create(
+            titulo="Atividade de turma sem matrícula", disciplina=cls.outra_disciplina,
+            prazo=timezone.now() + timedelta(days=3),
+        )
+        cls.notificacao = Notificacao.objects.create(
+            destinatario=cls.aluno, atividade=cls.atividade,
+            tipo=Notificacao.Tipo.NOVA_ATIVIDADE, prioridade=Notificacao.Prioridade.URGENTE,
+            titulo="Aviso urgente do aluno", mensagem="Uma nova atividade foi publicada.",
+        )
+        cls.lida = Notificacao.objects.create(
+            destinatario=cls.aluno, atividade=atividade_lida,
+            tipo=Notificacao.Tipo.NOVA_ATIVIDADE, prioridade=Notificacao.Prioridade.NORMAL,
+            titulo="Aviso já visualizado", mensagem="Uma atividade anterior.",
+            visualizada=True, visualizada_em=timezone.now(),
+        )
+        cls.aviso_outro_aluno = Notificacao.objects.create(
+            destinatario=cls.aluno2, atividade=cls.atividade,
+            tipo=Notificacao.Tipo.NOVA_ATIVIDADE, prioridade=Notificacao.Prioridade.URGENTE,
+            titulo="Aviso privado de outro aluno", mensagem="Mensagem privada.",
+        )
+        cls.oculta = Notificacao.objects.create(
+            destinatario=cls.aluno, atividade=atividade_oculta,
+            tipo=Notificacao.Tipo.NOVA_ATIVIDADE, titulo="Aviso de turma sem matrícula",
+            mensagem="Aviso que não deve aparecer.",
+        )
+
+    def setUp(self):
+        self.url = reverse("notificacoes:lista")
+        self.url_marcar = reverse(
+            "notificacoes:visualizar_notificacao", kwargs={"notificacao_id": self.notificacao.pk},
+        )
+
+    def test_listagem_exige_login(self):
+        response = self.client.get(self.url)
+
+        self.assertRedirects(response, f"{reverse('usuarios:login')}?next={self.url}")
+
+    def test_listagem_exibe_apenas_avisos_do_usuario_em_turmas_atuais(self):
+        self.client.force_login(self.aluno)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "notificacoes/lista.html")
+        self.assertQuerySetEqual(response.context["notificacoes"], [self.notificacao, self.lida])
+        self.assertEqual(response.context["nao_visualizadas"], 1)
+        self.assertContains(response, self.notificacao.titulo)
+        self.assertContains(response, self.lida.titulo)
+        self.assertNotContains(response, self.aviso_outro_aluno.titulo)
+        self.assertNotContains(response, self.oculta.titulo)
+        self.assertContains(response, reverse("atividades:detalhe", kwargs={"atividade_id": self.atividade.pk}))
+        self.assertContains(response, 'src="/static/js/notificacoes.js"')
+        self.assertContains(response, f'action="{self.url_marcar}"')
+        url_lida = reverse("notificacoes:visualizar_notificacao", kwargs={"notificacao_id": self.lida.pk})
+        self.assertNotContains(response, f'action="{url_lida}"')
+
+    def test_abrir_lista_nao_marca_avisos_nem_concede_xp(self):
+        self.client.force_login(self.aluno)
+
+        self.client.get(self.url)
+
+        self.notificacao.refresh_from_db()
+        self.assertFalse(self.notificacao.visualizada)
+        self.assertIsNone(self.notificacao.visualizada_em)
+        self.assertFalse(EventoXP.objects.exists())
+        self.assertFalse(Progresso.objects.exists())
+
+    def test_usuario_sem_avisos_ve_lista_vazia(self):
+        self.client.force_login(self.professor)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["nao_visualizadas"], 0)
+        self.assertContains(response, "Você ainda não tem notificações.")
+
+    def test_post_json_marca_aviso_e_concede_xp_uma_unica_vez(self):
+        self.client.force_login(self.aluno)
+
+        primeira = self.client.post(self.url_marcar, HTTP_ACCEPT="application/json")
+        self.notificacao.refresh_from_db()
+        primeira_data = self.notificacao.visualizada_em
+        segunda = self.client.post(self.url_marcar, HTTP_ACCEPT="application/json")
+
+        self.assertEqual(primeira.status_code, 200)
+        self.assertEqual(segunda.status_code, 200)
+        self.assertEqual(primeira.json(), {"success": True, "message": "Notificação visualizada"})
+        self.notificacao.refresh_from_db()
+        self.assertTrue(self.notificacao.visualizada)
+        self.assertIsNotNone(primeira_data)
+        self.assertEqual(self.notificacao.visualizada_em, primeira_data)
+        self.assertEqual(Progresso.objects.get(aluno=self.aluno).xp_total, 10)
+        self.assertEqual(EventoXP.objects.count(), 1)
+
+    def test_formulario_html_retorna_a_lista_com_contador_atualizado(self):
+        self.client.force_login(self.aluno)
+
+        response = self.client.post(
+            self.url_marcar,
+            HTTP_ACCEPT="text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            follow=True,
+        )
+
+        self.assertRedirects(response, self.url)
+        self.assertEqual(response.context["nao_visualizadas"], 0)
+        self.assertContains(response, "Notificação marcada como lida.")
+        self.assertNotContains(response, f'action="{self.url_marcar}"')
+        self.assertEqual(Progresso.objects.get(aluno=self.aluno).xp_total, 10)
+
+    def test_aluno_removido_nao_visualiza_aviso_nem_recebe_xp(self):
+        self.disciplina.alunos.remove(self.aluno)
+        self.client.force_login(self.aluno)
+
+        response = self.client.post(self.url_marcar)
+
+        self.assertEqual(response.status_code, 404)
+        self.notificacao.refresh_from_db()
+        self.assertFalse(self.notificacao.visualizada)
+        self.assertFalse(EventoXP.objects.exists())
+        self.assertFalse(Progresso.objects.exists())
+
+    def test_aluno_nao_marca_aviso_de_outro_destinatario(self):
+        self.client.force_login(self.aluno2)
+
+        response = self.client.post(self.url_marcar, HTTP_ACCEPT="application/json")
+
+        self.assertEqual(response.status_code, 404)
+        self.notificacao.refresh_from_db()
+        self.assertFalse(self.notificacao.visualizada)
+        self.assertFalse(EventoXP.objects.exists())
+
+    def test_formulario_com_csrf_valido_permite_leitura(self):
+        cliente = Client(enforce_csrf_checks=True)
+        cliente.force_login(self.aluno)
+        cliente.get(self.url)
+
+        response = cliente.post(
+            self.url_marcar,
+            data={"csrfmiddlewaretoken": cliente.cookies[settings.CSRF_COOKIE_NAME].value},
+            HTTP_ACCEPT="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+        self.notificacao.refresh_from_db()
+        self.assertTrue(self.notificacao.visualizada)
+
+    def test_painel_tem_link_para_lista_e_aviso(self):
+        self.client.force_login(self.aluno)
+
+        response = self.client.get(reverse("usuarios:painel"))
+
+        self.assertContains(response, f'href="{self.url}"')
+        self.assertContains(response, f'href="{self.url}#notificacao-{self.notificacao.pk}"')

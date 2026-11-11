@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Mensagens | Classroom Boost{% endblock %}
+
+{% block content %}
+<div class="page-heading chat-page-heading">
+  <div>
+    <span class="eyebrow">COMUNICAÇÃO PRIVADA</span>
+    <h1>Mensagens</h1>
+    <p class="page-subtitle">Consulte suas conversas com alunos e professores.</p>
+  </div>
+</div>
+
+<section class="chat-inbox-grid">
+  <div class="content-card chat-inbox-card">
+    <div class="section-heading">
+      <div><h2>Suas conversas</h2><p>Da mais recente para a mais antiga.</p></div>
+      <span class="count-badge">{{ conversas|length }}</span>
+    </div>
+    <div class="chat-thread-list">
+      {% for conversa in conversas %}
+        <a class="chat-thread-row" href="{% url 'chat:conversa' conversa.pk %}">
+          <span class="chat-person-avatar">{% if conversa.aluno_id == user.pk %}{{ conversa.professor.first_name|default:conversa.professor.username|first|upper }}{% else %}{{ conversa.aluno.first_name|default:conversa.aluno.username|first|upper }}{% endif %}</span>
+          <span class="chat-thread-copy">
+            <strong>{% if conversa.aluno_id == user.pk %}{{ conversa.professor.get_full_name|default:conversa.professor.username }}{% else %}{{ conversa.aluno.get_full_name|default:conversa.aluno.username }}{% endif %}</strong>
+            <small>{{ conversa.disciplina.nome }} · {{ conversa.total_mensagens }} mensagem(ns)</small>
+            <small class="chat-thread-date">Última atividade em {{ conversa.ultima_atividade|date:"d/m/Y · H:i" }}</small>
+          </span>
+          <span class="chat-thread-end" aria-hidden="true">›</span>
+        </a>
+      {% empty %}
+        <div class="empty-inline">Nenhuma conversa iniciada ainda. Escolha uma disciplina para começar.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <aside class="content-card chat-start-card">
+    <div class="section-heading">
+      <div><h2>Iniciar uma conversa</h2><p>{% if user.tipo == 'ALUNO' %}Escolha a disciplina para falar com seu professor.{% else %}Abra uma turma para escolher um aluno matriculado.{% endif %}</p></div>
+    </div>
+    <div class="chat-course-list">
+      {% for disciplina in disciplinas %}
+        <div class="chat-course-item">
+          <span class="chat-course-icon" aria-hidden="true">▦</span>
+          <div class="chat-course-copy">
+            <strong>{{ disciplina.nome }}</strong>
+            <small>{% if user.tipo == 'ALUNO' %}Prof. {{ disciplina.professor.get_full_name|default:disciplina.professor.username }}{% else %}{{ disciplina.total_alunos }} aluno(s){% endif %}</small>
+          </div>
+          {% if user.tipo == 'ALUNO' %}
+            <form method="post" action="{% url 'chat:abrir_conversa' disciplina.pk %}">
+              {% csrf_token %}
+              <button class="text-button" type="submit">Conversar</button>
+            </form>
+          {% else %}
+            <a class="text-button" href="{% url 'usuarios:detalhe_disciplina' disciplina.pk %}">Ver alunos</a>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div class="empty-inline">Nenhuma disciplina disponível para iniciar uma conversa.</div>
+      {% endfor %}
+    </div>
+  </aside>
+</section>
+{% endblock %}

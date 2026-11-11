@@ -20,12 +20,16 @@ def calcular_prioridade(atividade):
     return Notificacao.Prioridade.NORMAL
 
 
-def criar_notificacoes_da_atividade(atividade):
+def criar_notificacoes_da_atividade(atividade, alunos=None):
     prioridade = calcular_prioridade(atividade)
 
     notificacoes_criadas = []
 
-    for aluno in atividade.disciplina.alunos.all():
+    destinatarios = atividade.disciplina.alunos.all()
+    if alunos is not None:
+        destinatarios = destinatarios.filter(pk__in=[aluno.pk for aluno in alunos])
+
+    for aluno in destinatarios:
         notificacao, criada = Notificacao.objects.get_or_create(
             destinatario=aluno,
             atividade=atividade,
