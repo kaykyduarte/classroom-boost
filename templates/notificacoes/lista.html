@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Notificações | Classroom Boost{% endblock %}
+
+{% block content %}
+<div data-notificacoes>
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">ATUALIZAÇÕES</span>
+      <h1>Notificações</h1>
+      <p class="page-subtitle">Acompanhe novidades, atividades e lembretes das suas turmas.</p>
+    </div>
+    <span class="count-badge" data-contador-nao-lidas>{{ nao_visualizadas }} não lida(s)</span>
+  </div>
+  <p class="muted" data-notificacao-feedback role="status" aria-live="polite" hidden></p>
+  <section class="content-card notification-page-card">
+    {% for notificacao in notificacoes %}
+      <article id="notificacao-{{ notificacao.pk }}" class="notification-full {% if not notificacao.visualizada %}unread{% endif %}">
+        <span class="notification-large-icon" aria-hidden="true">{% if notificacao.prioridade == 'URGENTE' %}!{% elif notificacao.tipo == 'NOVA_ATIVIDADE' %}▤{% else %}◷{% endif %}</span>
+        <div class="notification-full-copy">
+          <div class="notification-title-row">
+            <h2>{{ notificacao.titulo }}</h2>
+            <span class="state-chip {% if not notificacao.visualizada %}state-new{% endif %}" data-estado-notificacao>{% if notificacao.visualizada %}Visualizada{% else %}Nova{% endif %}</span>
+          </div>
+          <p>{{ notificacao.mensagem }}</p>
+          <small>{{ notificacao.get_prioridade_display }} · {{ notificacao.get_tipo_display }} · {{ notificacao.criada_em|date:"d/m/Y H:i" }}</small>
+          <div class="notification-related">
+            Atividade: <a href="{% url 'atividades:detalhe' notificacao.atividade_id %}">{{ notificacao.atividade.titulo }}</a> · {{ notificacao.atividade.disciplina.nome }}
+          </div>
+          {% if not notificacao.visualizada %}
+            <form method="post" action="{% url 'notificacoes:visualizar_notificacao' notificacao_id=notificacao.pk %}" class="notification-action" data-marcar-notificacao>
+              {% csrf_token %}
+              <button class="text-action" type="submit">Marcar como lida</button>
+            </form>
+          {% endif %}
+        </div>
+      </article>
+    {% empty %}
+      <div class="empty-inline empty-large">Você ainda não tem notificações. Quando houver novidades, elas aparecerão aqui.</div>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'js/notificacoes.js' %}" defer></script>
+{% endblock %}

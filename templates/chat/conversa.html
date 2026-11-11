@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Conversa — {{ conversa.disciplina.nome }} | Classroom Boost{% endblock %}
+
+{% block content %}
+<div class="chat-conversation-page" data-chat data-usuario-id="{{ user.pk }}" data-outro-nome="{{ outro_participante.get_full_name|default:outro_participante.username }}" data-historico-url="{% url 'chat:historico_conversa' conversa.pk %}">
+  <a class="back-link" href="{% url 'chat:caixa_entrada' %}">← Voltar para mensagens</a>
+  <section class="chat-conversation-card">
+    <header class="chat-conversation-header">
+      <span class="chat-person-avatar chat-person-avatar-large">{{ outro_participante.first_name|default:outro_participante.username|first|upper }}</span>
+      <div class="chat-conversation-person">
+        <h1>{{ outro_participante.get_full_name|default:outro_participante.username }}</h1>
+        <p>{{ conversa.disciplina.nome }} · {% if eh_aluno %}Professor{% else %}Aluno{% endif %}</p>
+      </div>
+      <span class="chat-private-label">🔒 Conversa privada</span>
+      <button class="text-button" type="button" data-atualizar-historico hidden>Atualizar mensagens</button>
+    </header>
+
+    <div class="chat-message-history" aria-label="Histórico da conversa" data-chat-historico>
+      {% for mensagem in historico %}
+        <article class="chat-message {% if mensagem.remetente_id == user.pk %}chat-message-mine{% else %}chat-message-theirs{% endif %}" data-mensagem-id="{{ mensagem.pk }}">
+          <div class="chat-message-meta">
+            <strong>{% if mensagem.remetente_id == user.pk %}Você{% else %}{{ mensagem.remetente.get_full_name|default:mensagem.remetente.username }}{% endif %}</strong>
+            <time datetime="{{ mensagem.enviada_em|date:'c' }}">{{ mensagem.enviada_em|date:"d/m/Y · H:i" }}</time>
+          </div>
+          <div class="chat-message-bubble">{{ mensagem.conteudo|linebreaksbr }}</div>
+        </article>
+      {% empty %}
+        <div class="chat-empty-state" data-chat-vazio><span aria-hidden="true">✉</span><strong>Comece a conversa</strong><p>Envie uma mensagem sobre esta disciplina.</p></div>
+      {% endfor %}
+    </div>
+
+    <form method="post" action="{% url 'chat:enviar_mensagem' conversa.pk %}" class="chat-composer" data-chat-form>
+      {% csrf_token %}
+      <label for="chat-conteudo">Sua mensagem</label>
+      <textarea id="chat-conteudo" name="conteudo" class="chat-composer-input" rows="3" placeholder="Digite sua mensagem…" required>{{ conteudo }}</textarea>
+      <p class="field-error" data-chat-feedback role="status" aria-live="polite" {% if not erro %}hidden{% endif %}>{{ erro|default:"" }}</p>
+      <div class="chat-composer-footer">
+        <small>Somente os participantes desta conversa podem acessar as mensagens.</small>
+        <button class="button button-blue" type="submit">Enviar mensagem <span aria-hidden="true">➤</span></button>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{% static 'js/chat.js' %}" defer></script>
+{% endblock %}

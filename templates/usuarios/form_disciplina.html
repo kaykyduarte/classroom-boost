@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{% if disciplina %}Editar disciplina{% else %}Nova disciplina{% endif %} | Classroom Boost{% endblock %}
+
+{% block content %}
+<div class="form-page">
+  <a class="back-link" href="{% url 'usuarios:disciplinas' %}">← Voltar para disciplinas</a>
+  <section class="panel form-panel">
+    <span class="eyebrow">{% if disciplina %}GERENCIAMENTO DA TURMA{% else %}NOVA TURMA{% endif %}</span>
+    <h1>{% if disciplina %}Editar disciplina{% else %}Criar disciplina{% endif %}</h1>
+    <p class="muted">Defina o nome e selecione os alunos que farão parte da turma.</p>
+    <form method="post" class="stack-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="form-errors" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="field">
+        <label for="{{ form.nome.id_for_label }}">{{ form.nome.label }}</label>
+        {{ form.nome }}
+        {{ form.nome.errors }}
+      </div>
+      <fieldset class="field enrollment-options">
+        <legend>{{ form.alunos.label }}</legend>
+        <p class="help">{{ form.alunos.help_text }}</p>
+        {% if form.alunos.field.queryset.exists %}
+          {{ form.alunos }}
+        {% else %}
+          <p class="muted">Nenhum aluno cadastrado. Você pode salvar a turma sem alunos.</p>
+        {% endif %}
+        {{ form.alunos.errors }}
+      </fieldset>
+      <button class="button primary" type="submit">{% if disciplina %}Salvar alterações{% else %}Salvar disciplina{% endif %}</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

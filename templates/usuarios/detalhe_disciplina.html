@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{{ disciplina.nome }} | Classroom Boost{% endblock %}
+
+{% block content %}
+<a class="back-link" href="{% url 'usuarios:disciplinas' %}">← Voltar para disciplinas</a>
+
+<section class="discipline-hero">
+  <div class="discipline-cover cover-2">
+    <span class="cover-label">CLASSROOM BOOST · TURMA</span>
+    <h1>{{ disciplina.nome }}</h1>
+    <p>Professor: {{ disciplina.professor.get_full_name|default:disciplina.professor.username }}</p>
+    <span class="cover-watermark" aria-hidden="true">{{ disciplina.nome|first|upper }}</span>
+  </div>
+  <div class="discipline-hero-footer">
+    <span>{{ disciplina.total_alunos }} aluno(s) matriculado(s)</span>
+    {% if user.tipo == 'PROFESSOR' and user.pk == disciplina.professor_id %}
+      <div class="hero-actions">
+        <a class="button button-outline" href="{% url 'usuarios:editar_disciplina' disciplina.pk %}">Editar turma e matrículas</a>
+        <a class="button button-blue" href="{% url 'atividades:criar' %}?disciplina={{ disciplina.pk }}">＋ Nova atividade</a>
+      </div>
+    {% elif user.tipo == 'ALUNO' %}
+      <form method="post" action="{% url 'chat:abrir_conversa' disciplina.pk %}">
+        {% csrf_token %}
+        <button class="button button-blue" type="submit">✉ Conversar com o professor</button>
+      </form>
+    {% endif %}
+  </div>
+</section>
+
+{% if pode_ver_alunos %}
+<section class="content-card chat-roster-card">
+  <div class="section-heading"><div><h2>Alunos matriculados</h2><p>Participantes da sua turma.</p></div></div>
+  <div class="chat-roster-list">
+    {% for aluno in alunos %}
+      <div class="chat-roster-row">
+        <span class="chat-person-avatar">{{ aluno.first_name|default:aluno.username|first|upper }}</span>
+        <span class="chat-roster-name">
+          <strong>{{ aluno.get_full_name|default:aluno.username }}</strong>
+          <small>{{ aluno.email|default:"Aluno matriculado" }}</small>
+        </span>
+        {% if user.tipo == 'PROFESSOR' %}
+          <form method="post" action="{% url 'chat:abrir_conversa' disciplina.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="aluno_id" value="{{ aluno.pk }}">
+            <button class="text-button" type="submit">Abrir conversa →</button>
+          </form>
+        {% endif %}
+      </div>
+    {% empty %}
+      <div class="empty-inline">Ainda não há alunos matriculados nesta disciplina.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="content-card activity-page-card">
+  <div class="section-heading">
+    <div><h2>Atividades da turma</h2><p>Publicações e prazos desta disciplina.</p></div>
+    <span class="count-badge">{{ atividades|length }} atividade(s)</span>
+  </div>
+  <div class="activity-list">
+    {% for atividade in atividades %}
+      <a class="activity-item activity-item-large" href="{% url 'atividades:detalhe' atividade.pk %}">
+        <span class="activity-file-icon" aria-hidden="true">▤</span>
+        <div class="activity-item-copy">
+          <b>{{ atividade.titulo }}</b>
+          <small>Publicado em {{ atividade.criada_em|date:"d/m/Y" }}</small>
+          {% if atividade.descricao %}<p>{{ atividade.descricao|linebreaksbr }}</p>{% endif %}
+        </div>
+        <span class="activity-date"><small>Prazo</small><b>{{ atividade.prazo|date:"d/m/Y · H:i" }}</b></span>
+        <span class="activity-chevron" aria-hidden="true">›</span>
+      </a>
+    {% empty %}
+      <div class="empty-inline empty-large">Nenhuma atividade cadastrada nesta turma.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

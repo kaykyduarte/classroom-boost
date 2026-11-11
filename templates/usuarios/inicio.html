@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Classroom Boost | Aprender, acompanhar e evoluir{% endblock %}
+
+{% block content %}
+<section class="landing-hero">
+  <div class="landing-copy">
+    <span class="eyebrow">APRENDIZAGEM CONECTADA</span>
+    <h1>Um espaço para <span>ensinar</span>, aprender e evoluir.</h1>
+    <p>Organize suas turmas, publique atividades, acompanhe entregas e acompanhe o progresso dos alunos em um só lugar.</p>
+    <div class="hero-actions">
+      {% if not user.is_authenticated %}
+        <a class="button button-blue" href="{% url 'usuarios:login' %}">Entrar na plataforma</a>
+        <a class="button button-outline" href="{% url 'usuarios:cadastro' %}">Criar conta de aluno</a>
+      {% endif %}
+      <a class="button button-outline" href="#recursos">Conheça a plataforma</a>
+    </div>
+  </div>
+  <div class="landing-visual" aria-hidden="true">
+    <div class="landing-window">
+      <div class="landing-window-top">
+        <span></span><span></span><span></span><b>Classroom Boost</b>
+      </div>
+      <div class="landing-window-content">
+        <div class="landing-mini-sidebar"><i></i><i></i><i></i><i></i></div>
+        <div class="landing-mini-main">
+          <div class="mini-greeting"></div>
+          <div class="mini-heading"></div>
+          <div class="mini-cards"><i></i><i></i><i></i></div>
+          <div class="mini-rows"><i></i><i></i><i></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="landing-bubble bubble-one">✓ Atividades</div>
+    <div class="landing-bubble bubble-two">★ Conquistas</div>
+  </div>
+</section>
+
+<section class="landing-features" id="recursos" aria-label="Recursos da plataforma">
+  <article>
+    <span class="feature-symbol symbol-blue">▦</span>
+    <h2>Turmas organizadas</h2>
+    <p>Gerencie disciplinas, professores e alunos com facilidade.</p>
+  </article>
+  <article>
+    <span class="feature-symbol symbol-green">▤</span>
+    <h2>Atividades e entregas</h2>
+    <p>Publique tarefas, acompanhe respostas e dê feedback.</p>
+  </article>
+  <article>
+    <span class="feature-symbol symbol-yellow">★</span>
+    <h2>Progresso e conquistas</h2>
+    <p>Valorize a participação com pontos e ranking de aprendizagem.</p>
+  </article>
+</section>
+{% endblock %}

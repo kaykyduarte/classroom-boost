@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Atividades | Classroom Boost{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <span class="eyebrow">SALA DE AULA</span>
+    <h1>Atividades</h1>
+    <p class="page-subtitle">{% if user.tipo == 'ALUNO' %}Veja as tarefas e os prazos das suas disciplinas.{% else %}Acompanhe o que foi publicado nas suas turmas.{% endif %}</p>
+  </div>
+  {% if user.tipo == 'PROFESSOR' %}
+    <a class="button button-blue" href="{% url 'atividades:criar' %}">＋ Criar atividade</a>
+  {% endif %}
+</div>
+
+<section class="content-card activity-page-card">
+  <div class="section-heading">
+    <div><h2>Atividades publicadas</h2><p>Selecione uma atividade para consultar as orientações.</p></div>
+    <span class="count-badge">{{ atividades|length }} atividade(s)</span>
+  </div>
+  <div class="activity-list">
+    {% for atividade in atividades %}
+      <a class="activity-item activity-item-large" href="{% url 'atividades:detalhe' atividade.pk %}">
+        <span class="activity-file-icon" aria-hidden="true">▤</span>
+        <span class="activity-item-copy">
+          <b>{{ atividade.titulo }}</b>
+          <small>{{ atividade.disciplina.nome }} · Prof. {{ atividade.disciplina.professor.get_full_name|default:atividade.disciplina.professor.username }}</small>
+        </span>
+        <span class="activity-date"><small>Prazo</small><b>{{ atividade.prazo|date:"d/m/Y · H:i" }}</b></span>
+        <span class="activity-chevron" aria-hidden="true">›</span>
+      </a>
+    {% empty %}
+      <div class="empty-inline empty-large">Nenhuma atividade publicada nas suas turmas.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

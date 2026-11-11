@@ -1,0 +1,7 @@
+<section class="content-section">
+  <div class="section-heading">
+    <div><h2>Minhas turmas</h2><p>Um resumo das suas disciplinas.</p></div>
+    <a class="section-link" href="{% url 'usuarios:disciplinas' %}">Ver todas <span aria-hidden="true">→</span></a>
+  </div>
+  {% include "usuarios/_cards_disciplinas.html" %}
+</section>

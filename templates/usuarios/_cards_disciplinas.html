@@ -1,0 +1,32 @@
+<div class="class-grid">
+  {% for disciplina in disciplinas %}
+    <article class="class-card">
+      <a class="class-card-main" href="{% url 'usuarios:detalhe_disciplina' disciplina.pk %}">
+        <div class="class-cover cover-{% cycle '1' '2' '3' '4' '5' '6' %}">
+          <span class="cover-label">CLASSROOM BOOST · TURMA</span>
+          <strong>{{ disciplina.nome }}</strong>
+          <span class="cover-subtitle">Prof. {{ disciplina.professor.get_full_name|default:disciplina.professor.username }}</span>
+          <span class="cover-watermark" aria-hidden="true">{{ disciplina.nome|first|upper }}</span>
+        </div>
+        <div class="class-card-info">
+          <b>{{ disciplina.nome }}</b>
+          <span>{{ disciplina.total_alunos }} aluno(s) matriculado(s)</span>
+        </div>
+      </a>
+      <div class="class-card-footer">
+        <span>Minha turma</span>
+        <a href="{% url 'usuarios:detalhe_disciplina' disciplina.pk %}">Abrir turma <span aria-hidden="true">→</span></a>
+      </div>
+    </article>
+  {% empty %}
+    <div class="empty-class-card">
+      <span class="empty-class-icon" aria-hidden="true">▦</span>
+      <b>Você ainda não possui turmas</b>
+      {% if user.tipo == 'ALUNO' %}
+        <p>Peça ao seu professor para adicionar seu usuário a uma disciplina.</p>
+      {% else %}
+        <p>As disciplinas vinculadas ao seu usuário aparecerão aqui.</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
